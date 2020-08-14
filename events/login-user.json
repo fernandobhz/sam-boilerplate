@@ -1,0 +1,7 @@
+{
+    "httpMethod": "POST",
+    "pathParameters": {
+        "email": "bob@contoso.com",
+        "pass": "12345678"
+    }
+}

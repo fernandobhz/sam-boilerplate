@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Sam boilerplate
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Globals:
+  Api:    
+    Cors:
+      AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+      AllowOrigin: "'*'"
+
+Parameters:
+  JwtSecret:
+    Type: String
+
+Resources:
+  apiContractFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/api-contract.apiContract
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: OpenApi Spec
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+
+  loginUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/login-user.loginUser
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: Login User
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          JWT_SECRET: !Ref JwtSecret          
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: POST
+
+  registerUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/register-user.registerUser
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: Register User
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          JWT_SECRET: !Ref JwtSecret
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /register
+            Method: POST
+
+  UsersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: email
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+Outputs:
+  WebEndpoint:    
+    Description: "API Gateway endpoint URL for prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
